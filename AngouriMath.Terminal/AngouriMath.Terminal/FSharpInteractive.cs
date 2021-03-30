@@ -1,12 +1,9 @@
 ﻿using Microsoft.DotNet.Interactive.Commands;
 using Microsoft.DotNet.Interactive.Events;
 using Microsoft.DotNet.Interactive.Server;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using static AngouriMath.Terminal.ExecutionResult;
 
 namespace AngouriMath.Terminal
 {
@@ -32,29 +29,28 @@ namespace AngouriMath.Terminal
             var envelope = KernelCommandEnvelope.Create(submitCode);
             var serialized = KernelCommandEnvelope.Serialize(envelope);
             process.StandardInput.WriteLine(serialized);
+            string? res = null;
             while (!process.StandardOutput.EndOfStream)
             {
                 var line = process.StandardOutput.ReadLine();
                 var des = KernelEventEnvelope.Deserialize(line).Event;
                 if (des is DisplayEvent display)
-                    return new ExecutionResult.ToDisplay(display.FormattedValues.First().Value);
+                    res = display.FormattedValues.First().Value;
                 if (des is CommandSucceeded)
-                    return new ExecutionResult.Void();
+                    return res is null ? new VoidSuccess() : new VerboseSuccess(res);
                 if (des is CommandFailed failed)
-                    return new ExecutionResult.Error(failed.Message);
-                if (des is PackageAdded)
-                    return new ExecutionResult.PackageAdded();
+                    return new Error(failed.Message);
             }
-            return new ExecutionResult.EOF();
+            return new EOF();
         }
     }
 
     public abstract record ExecutionResult
     {
-        public sealed record ToDisplay(string Text) : ExecutionResult;
-        public sealed record PackageAdded : ExecutionResult;
+        public sealed record SuccessPackageAdded : ExecutionResult;
         public sealed record Error(string Message) : ExecutionResult;
-        public sealed record Void : ExecutionResult;
+        public sealed record VoidSuccess : ExecutionResult;
+        public sealed record VerboseSuccess(string Result) : ExecutionResult;
         public sealed record EOF : ExecutionResult;
     }
 }
