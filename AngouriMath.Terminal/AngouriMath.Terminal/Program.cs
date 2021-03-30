@@ -1,7 +1,6 @@
 ﻿using AngouriMath.Terminal;
 using static AngouriMath.Terminal.ExecutionResult;
 using System;
-using System.Reflection;
 
 Console.WriteLine(
 $@"
@@ -11,6 +10,7 @@ $@"
 ".Trim());
 
 Console.WriteLine("Starting the kernel...");
+var ui = new UserInterface();
 var interactive = new FSharpInteractive();
 var execRes = interactive.Execute("#r \"nuget: AngouriMath.FSharp, *-*\"");
 if (!HandleResult(execRes)) return;
@@ -24,28 +24,27 @@ open Shortcuts
 ");
 if (!HandleResult(openRes)) return;
 Console.WriteLine("2/3 done.");
-var preferredType = 
-    "Microsoft.DotNet.Interactive.Formatting.Formatter.SetPreferredMimeTypeFor(typeof<Object>, \"text/plain\");\n" +
-    "Microsoft.DotNet.Interactive.Formatting.Formatter.Register<Object>(new System.Func<Object, string>(fun t->t.ToString()));\n";
-var formatRes = interactive.Execute(preferredType);
-if (!HandleResult(formatRes)) return;
+// var preferredType = 
+//     "Microsoft.DotNet.Interactive.Formatting.Formatter.SetPreferredMimeTypeFor(typeof<Object>, \"text/plain\");\n" +
+//     "Microsoft.DotNet.Interactive.Formatting.Formatter.Register<Object>(new System.Func<Object, string>(fun t->t.ToString()));\n";
+// var formatRes = interactive.Execute(preferredType);
+// if (!HandleResult(formatRes)) return;
 Console.WriteLine("3/3 done. Started.");
 
 while (true)
 {
-    var input = Console.ReadLine();
+    var input = ui.ReadLine();
     if (input is null)
         continue;
-    var response = interactive.Execute(input) switch
+    switch (interactive.Execute(input))
     {
-        VerboseSuccess(var text) => text,
-        VoidSuccess => "",
-        SuccessPackageAdded => "Package added",
-        Error error => $"Error: {error}",
-        EOF => "",
-        _ => throw new Exception()
-    };
-    Console.WriteLine(response);
+        case VerboseSuccess(var text):
+            ui.WriteLine(text);
+            break;
+        case Error(var message):
+            ui.WriteLineError(message);
+            break;
+    }
 }
 
 static bool HandleResult(ExecutionResult res)
