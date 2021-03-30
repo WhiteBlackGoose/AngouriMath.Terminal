@@ -24,10 +24,10 @@ preRunCode +=
 @"
 open AngouriMath
 open Core
-open Functions
 open Operators
 open Shortcuts
 open Constants
+open Functions
 
 let ( + ) a b =
     ((parsed a) + (parsed b)).InnerSimplified
@@ -40,6 +40,9 @@ let ( * ) a b =
 
 let ( / ) a b =
     ((parsed a) / (parsed b)).InnerSimplified
+
+let ( ** ) a b =
+    ((parsed a).Pow(parsed b)).InnerSimplified
 
 let x = symbol ""x""
 let y = symbol ""y""
