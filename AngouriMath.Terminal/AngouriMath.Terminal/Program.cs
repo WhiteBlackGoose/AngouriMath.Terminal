@@ -4,27 +4,50 @@ using System;
 
 Console.WriteLine(
 $@"
-╔═══════════════════════════════════╗
-║  Welcome to AngouriMath.Terminal  ║
-╚═══════════════════════════════════╝
+══════════════════════════════════════════════════════════════════════
+                Welcome to AngouriMath.Terminal.
+
+It is an interface to AngouriMath, open source symbolic algebra
+library. The terminal uses F# Interactive inside, so that you can
+run any command you could in normal F#. AngouriMath.FSharp is
+being installed every start, so you are guaranteed to be on the
+latest version of it. Type 'preRunCode' to see, what code
+was preran before you were able to type.
+══════════════════════════════════════════════════════════════════════
 ".Trim());
 
-Console.WriteLine("Starting the kernel...");
+Console.Write("Starting the kernel... ");
 var ui = new UserInterface();
 var interactive = new FSharpInteractive();
-var execRes = interactive.Execute("#r \"nuget: AngouriMath.FSharp, *-*\"");
-if (!HandleResult(execRes)) return;
-Console.WriteLine("1/3 done.");
-var openRes = interactive.Execute(@"
+var preRunCode = "#r \"nuget: AngouriMath.FSharp, *-*\"";
+preRunCode +=
+@"
 open AngouriMath
 open Core
 open Functions
 open Operators
 open Shortcuts
-");
-if (!HandleResult(openRes)) return;
-Console.WriteLine("2/3 done.");
-Console.WriteLine("3/3 done. Started.");
+
+let ( + ) a b =
+    ((parsed a) + (parsed b)).InnerSimplified
+
+let ( - ) a b =
+    ((parsed a) - (parsed b)).InnerSimplified
+
+let ( * ) a b =
+    ((parsed a) * (parsed b)).InnerSimplified
+
+let ( / ) a b =
+    ((parsed a) / (parsed b)).InnerSimplified
+
+let x = symbol ""x""
+let y = symbol ""y""
+let a = symbol ""a""
+let b = symbol ""b""
+";
+preRunCode += $"let preRunCode = \"{preRunCode.Replace("\"", "\\\"")}\"";
+if (!HandleResult(interactive.Execute(preRunCode))) return;
+Console.WriteLine("started. You can start working.");
 
 while (true)
 {
