@@ -1,2 +1,4 @@
-# AngouriMath.Terminal
-Currently: experimental repository for creating a terminal for AM based on F# Interactive.
+## AngouriMath.Terminal
+
+Currently: experimental repository for creating a terminal for AngouriMath based on F# Interactive.
+
