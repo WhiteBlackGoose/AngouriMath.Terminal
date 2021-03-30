@@ -27,6 +27,7 @@ open Core
 open Functions
 open Operators
 open Shortcuts
+open Constants
 
 let ( + ) a b =
     ((parsed a) + (parsed b)).InnerSimplified
