@@ -3,45 +3,57 @@ using Microsoft.DotNet.Interactive.Events;
 using Microsoft.DotNet.Interactive.Server;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using static AngouriMath.Terminal.ExecutionResult;
+using Microsoft.DotNet.Interactive.FSharp;
+using System;
+using Microsoft.DotNet.Interactive;
+using Microsoft.DotNet.Interactive.Formatting;
 
 namespace AngouriMath.Terminal
 {
     internal sealed class FSharpInteractive
     {
-        private readonly Process process;
+        private readonly CompositeKernel compositeKernel;
+        private readonly FSharpKernel kernel;
         public FSharpInteractive()
         {
-            var info = new ProcessStartInfo("dotnet", "interactive stdio --default-kernel fsharp")
-            {
-                UseShellExecute = false,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            };
-            process = new Process() { StartInfo = info };
-            process.Start();
+            compositeKernel = new();
+            kernel = new FSharpKernel()
+                    .UseDefaultFormatting()
+                    .UseNugetDirective()
+                    .UseKernelHelpers()
+                    .UseWho()
+                    .UseDotNetVariableSharing()
+                    ;
+            compositeKernel.Add(kernel);
+            Formatter.SetPreferredMimeTypeFor(typeof(object), "text/plain");
+            Formatter.Register<object>(o => o.ToString());
         }
 
         public ExecutionResult Execute(string code)
         {
             var submitCode = new SubmitCode(code);
-            var envelope = KernelCommandEnvelope.Create(submitCode);
-            var serialized = KernelCommandEnvelope.Serialize(envelope);
-            process.StandardInput.WriteLine(serialized);
-            string? res = null;
-            while (!process.StandardOutput.EndOfStream)
-            {
-                var line = process.StandardOutput.ReadLine();
-                var des = KernelEventEnvelope.Deserialize(line).Event;
-                if (des is DisplayEvent display)
-                    res = display.FormattedValues.First().Value;
-                if (des is CommandSucceeded)
-                    return res is null ? new VoidSuccess() : new VerboseSuccess(res);
-                if (des is CommandFailed failed)
-                    return new Error(failed.Message);
-            }
-            return new EOF();
+            string? nonVoidResponse = null;
+            ExecutionResult? res = null;
+            var computed = kernel.SendAsync(new SubmitCode(code)).Result;
+            computed.KernelEvents.Subscribe(
+                e =>
+                {
+                    switch (e)
+                    {
+                        case CommandSucceeded:
+                            res = nonVoidResponse is null ? new VoidSuccess() : new VerboseSuccess(nonVoidResponse);
+                            break;
+                        case CommandFailed failed:
+                            res = new Error(failed.Message);
+                            break;
+                        case DisplayEvent display:
+                            nonVoidResponse = display.Value.ToString();
+                            break;
+                    }
+                });
+            return res ?? new EOF();
         }
     }
 

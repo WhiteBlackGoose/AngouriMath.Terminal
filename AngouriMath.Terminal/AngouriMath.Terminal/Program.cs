@@ -24,11 +24,6 @@ open Shortcuts
 ");
 if (!HandleResult(openRes)) return;
 Console.WriteLine("2/3 done.");
-// var preferredType = 
-//     "Microsoft.DotNet.Interactive.Formatting.Formatter.SetPreferredMimeTypeFor(typeof<Object>, \"text/plain\");\n" +
-//     "Microsoft.DotNet.Interactive.Formatting.Formatter.Register<Object>(new System.Func<Object, string>(fun t->t.ToString()));\n";
-// var formatRes = interactive.Execute(preferredType);
-// if (!HandleResult(formatRes)) return;
 Console.WriteLine("3/3 done. Started.");
 
 while (true)
