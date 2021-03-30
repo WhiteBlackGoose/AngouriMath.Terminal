@@ -12,7 +12,7 @@ library. The terminal uses F# Interactive inside, so that you can
 run any command you could in normal F#. AngouriMath.FSharp is
 being installed every start, so you are guaranteed to be on the
 latest version of it. Type 'preRunCode' to see, what code
-was preran before you were able to type.
+was pre-ran before you were able to type.
 ══════════════════════════════════════════════════════════════════════
 ".Trim());
 
@@ -29,6 +29,14 @@ open Shortcuts
 open Constants
 open Functions
 
+let eval (x : obj) = 
+    match (parsed x).InnerSimplified with
+    | :? Entity.Number.Integer as i -> i.ToString()
+    | :? Entity.Number.Rational as i -> i.RealPart.EDecimal.ToString()
+    | :? Entity.Number.Real as re -> re.RealPart.EDecimal.ToString()
+    | :? Entity.Number.Complex as cx -> cx.RealPart.EDecimal.ToString() + "" + "" + cx.ImaginaryPart.EDecimal.ToString() + ""i""
+    | other -> (evaled other).ToString()
+
 let ( + ) a b =
     ((parsed a) + (parsed b)).InnerSimplified
 
@@ -43,6 +51,7 @@ let ( / ) a b =
 
 let ( ** ) a b =
     ((parsed a).Pow(parsed b)).InnerSimplified
+    
 
 let x = symbol ""x""
 let y = symbol ""y""

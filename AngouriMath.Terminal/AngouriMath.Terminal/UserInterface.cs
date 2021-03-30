@@ -11,6 +11,11 @@ namespace AngouriMath.Terminal
         private static string Time
             => DateTime.Now.ToString("HH:mm:ss");
 
+        public UserInterface()
+        {
+            Console.Title = "AngouriMath Terminal.";
+        }
+
         private static void PrintPrefix(string prefix)
         {
             Console.ForegroundColor = ConsoleColor.DarkGray;
