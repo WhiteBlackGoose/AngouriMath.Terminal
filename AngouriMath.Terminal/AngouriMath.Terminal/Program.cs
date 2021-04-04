@@ -1,5 +1,6 @@
 ﻿using AngouriMath.Terminal;
-using static AngouriMath.Terminal.ExecutionResult;
+using static AngouriMath.Terminal.Shared.ExecutionResult;
+using AngouriMath.Terminal.Shared;
 using System;
 
 Console.WriteLine(
@@ -19,46 +20,9 @@ was pre-ran before you were able to type.
 Console.Write("Starting the kernel... ");
 var ui = new UserInterface();
 var interactive = new FSharpInteractive();
-var preRunCode = "#r \"nuget: AngouriMath.FSharp, *-*\"";
-preRunCode +=
-@"
-open AngouriMath
-open Core
-open Operators
-open Shortcuts
-open Constants
-open Functions
-
-let eval (x : obj) = 
-    match (parsed x).InnerSimplified with
-    | :? Entity.Number.Integer as i -> i.ToString()
-    | :? Entity.Number.Rational as i -> i.RealPart.EDecimal.ToString()
-    | :? Entity.Number.Real as re -> re.RealPart.EDecimal.ToString()
-    | :? Entity.Number.Complex as cx -> cx.RealPart.EDecimal.ToString() + "" + "" + cx.ImaginaryPart.EDecimal.ToString() + ""i""
-    | other -> (evaled other).ToString()
-
-let ( + ) a b =
-    ((parsed a) + (parsed b)).InnerSimplified
-
-let ( - ) a b =
-    ((parsed a) - (parsed b)).InnerSimplified
-
-let ( * ) a b =
-    ((parsed a) * (parsed b)).InnerSimplified
-
-let ( / ) a b =
-    ((parsed a) / (parsed b)).InnerSimplified
-
-let ( ** ) a b =
-    ((parsed a).Pow(parsed b)).InnerSimplified
-    
-
-let x = symbol ""x""
-let y = symbol ""y""
-let a = symbol ""a""
-let b = symbol ""b""
-";
-preRunCode += $"let preRunCode = \"{preRunCode.Replace("\"", "\\\"")}\"";
+var preRunCode = CodeSnippets.AngouriMathInstall + "\n";
+preRunCode += CodeSnippets.OpensAndOperators;
+preRunCode = $"let preRunCode = \"{preRunCode.Replace("\"", "\\\"")}\"";
 if (!HandleResult(interactive.Execute(preRunCode))) return;
 Console.WriteLine("started. You can start working.");
 
@@ -69,7 +33,10 @@ while (true)
         continue;
     switch (interactive.Execute(input))
     {
-        case VerboseSuccess(var text):
+        case PlainTextSuccess(var text):
+            ui.WriteLine(text);
+            break;
+        case LatexSuccess(_, var text):
             ui.WriteLine(text);
             break;
         case Error(var message):
