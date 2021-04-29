@@ -49,22 +49,22 @@ namespace AngouriMath.Terminal.Shared
             return await Execute($"#r \"{loc}\"");
         }
 
-        public static async Task<DUnion<Error, FSharpInteractive>> Create()
+        public static async Task<DUnion> Create()
         {
             var interactive = new FSharpInteractive();
             interactive.kernel = new FSharpKernel();
             
             if (await interactive.LoadAssembly(typeof(MathS).Assembly.Location) is Error err1)
-                return new(err1);
+                return DUnion.V(err1);
             if (await interactive.LoadAssembly(typeof(FSharp.Core).Assembly.Location) is Error err2)
-                return new(err2);
+                return DUnion.V(err2);
             if (await interactive.LoadAssembly(typeof(Interactive.AggressiveOperators).Assembly.Location) is Error err3)
-                return new(err3);
+                return DUnion.V(err3);
 
             Formatter.SetPreferredMimeTypeFor(typeof(object), "text/plain");
             Formatter.Register<object>(ObjectEncode);
 
-            return new(interactive);
+            return DUnion.V(interactive);
         }
 
         private FSharpInteractive() { }
@@ -105,22 +105,10 @@ namespace AngouriMath.Terminal.Shared
         public sealed record EOF : ExecutionResult;
     }
 
-    public sealed record DUnion<T0, T1> where T0 : class where T1 : class
+    public abstract record DUnion
     {
-        readonly T0? field0 = default;
-        readonly T1? field1 = default;
-        int type;
-        public DUnion(T0 value) => (type, field0) = (0, value);
-        public DUnion(T1 value) => (type, field1) = (1, value);
-
-        public T? As<T>() where T : class
-        {
-            if (type == 0 && field0 is T t0)
-                return t0;
-            if (type == 1 && field1 is T t1)
-                return t1;
-            return null;
-        }
+        public static Item<T> V<T>(T Value) => new(Value);
+        public sealed record Item<T>(T Value) : DUnion;
     }
 }
 

@@ -21,10 +21,10 @@ Console.Write("Starting the kernel... ");
 var ui = new UserInterface();
 
 var ran = await FSharpInteractive.Create();
-if (ran.As<Error>() is { } e)
+if (ran is DUnion.Item<Error>(var e))
     HandleResult(e);
 
-var interactive = ran.As<FSharpInteractive>()!;
+var interactive = ((DUnion.Item<FSharpInteractive>)ran).Value;
 await interactive.Execute("1 + 1");
 var preRunCode = CodeSnippets.OpensAndOperators;
 preRunCode += $"let preRunCode = \"{preRunCode.Replace("\"", "\\\"")}\"";
