@@ -8,15 +8,14 @@ namespace AngouriMath.Terminal.Shared
 {
     public static class CodeSnippets
     {
-        public const string AngouriMathInstall = "#r \"nuget: AngouriMath.FSharp, *-*\"";
         public const string OpensAndOperators =
 @"
 open AngouriMath
-open Core
-open Operators
-open Shortcuts
-open Constants
-open Functions
+open AngouriMath.FSharp.Core
+open AngouriMath.FSharp.Functions
+open AngouriMath.FSharp.Shortcuts
+open AngouriMath.FSharp.Constants
+
 
 let eval (x : obj) = 
     match (parsed x).InnerSimplified with
@@ -26,21 +25,7 @@ let eval (x : obj) =
     | :? Entity.Number.Complex as cx -> cx.RealPart.EDecimal.ToString() + "" + "" + cx.ImaginaryPart.EDecimal.ToString() + ""i""
     | other -> (evaled other).ToString()
 
-let ( + ) a b =
-    ((parsed a) + (parsed b)).InnerSimplified
-
-let ( - ) a b =
-    ((parsed a) - (parsed b)).InnerSimplified
-
-let ( * ) a b =
-    ((parsed a) * (parsed b)).InnerSimplified
-
-let ( / ) a b =
-    ((parsed a) / (parsed b)).InnerSimplified
-
-let ( ** ) a b =
-    ((parsed a).Pow(parsed b)).InnerSimplified
-    
+open AngouriMath.Interactive.AggressiveOperators
 
 let x = symbol ""x""
 let y = symbol ""y""

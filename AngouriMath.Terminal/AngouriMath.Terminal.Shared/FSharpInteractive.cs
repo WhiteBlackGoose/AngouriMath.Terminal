@@ -11,6 +11,8 @@ using Microsoft.DotNet.Interactive;
 using Microsoft.DotNet.Interactive.Formatting;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Reactive.Linq;
 
 namespace AngouriMath.Terminal.Shared
 {
@@ -39,29 +41,40 @@ namespace AngouriMath.Terminal.Shared
                 _ => new VoidSuccess()
             };
 
-        private readonly CompositeKernel compositeKernel;
-        private readonly FSharpKernel kernel;
-        public FSharpInteractive()
+        private FSharpKernel kernel;
+
+        private async Task<ExecutionResult> LoadAssembly(string path)
         {
-            compositeKernel = new();
-            kernel = new FSharpKernel()
-                    .UseDefaultFormatting()
-                    .UseNugetDirective()
-                    .UseKernelHelpers()
-                    .UseWho()
-                    .UseDotNetVariableSharing()
-                    ;
-            compositeKernel.Add(kernel);
-            Formatter.SetPreferredMimeTypeFor(typeof(object), "text/plain");
-            Formatter.Register<object>(ObjectEncode);
+            var loc = path.Replace(@"\", @"\\");
+            return await Execute($"#r \"{loc}\"");
         }
 
-        public ExecutionResult Execute(string code)
+        public static async Task<DUnion<Error, FSharpInteractive>> Create()
+        {
+            var interactive = new FSharpInteractive();
+            interactive.kernel = new FSharpKernel();
+            
+            if (await interactive.LoadAssembly(typeof(MathS).Assembly.Location) is Error err1)
+                return new(err1);
+            if (await interactive.LoadAssembly(typeof(FSharp.Core).Assembly.Location) is Error err2)
+                return new(err2);
+            if (await interactive.LoadAssembly(typeof(Interactive.AggressiveOperators).Assembly.Location) is Error err3)
+                return new(err3);
+
+            Formatter.SetPreferredMimeTypeFor(typeof(object), "text/plain");
+            Formatter.Register<object>(ObjectEncode);
+
+            return new(interactive);
+        }
+
+        private FSharpInteractive() { }
+
+        public async Task<ExecutionResult> Execute(string code)
         {
             var submitCode = new SubmitCode(code);
             string? nonVoidResponse = null;
             ExecutionResult? res = null;
-            var computed = kernel.SendAsync(new SubmitCode(code)).Result;
+            var computed = await kernel.SendAsync(new SubmitCode(code));
             computed.KernelEvents.Subscribe(
                 e =>
                 {
@@ -90,6 +103,24 @@ namespace AngouriMath.Terminal.Shared
         public sealed record PlainTextSuccess(string Result) : ExecutionResult;
         public sealed record LatexSuccess(string Latex, string Source) : ExecutionResult;
         public sealed record EOF : ExecutionResult;
+    }
+
+    public sealed record DUnion<T0, T1> where T0 : class where T1 : class
+    {
+        readonly T0? field0 = default;
+        readonly T1? field1 = default;
+        int type;
+        public DUnion(T0 value) => (type, field0) = (0, value);
+        public DUnion(T1 value) => (type, field1) = (1, value);
+
+        public T? As<T>() where T : class
+        {
+            if (type == 0 && field0 is T t0)
+                return t0;
+            if (type == 1 && field1 is T t1)
+                return t1;
+            return null;
+        }
     }
 }
 

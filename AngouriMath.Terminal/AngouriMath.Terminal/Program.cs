@@ -19,11 +19,16 @@ was pre-ran before you were able to type.
 
 Console.Write("Starting the kernel... ");
 var ui = new UserInterface();
-var interactive = new FSharpInteractive();
-var preRunCode = CodeSnippets.AngouriMathInstall + "\n";
-preRunCode += CodeSnippets.OpensAndOperators;
-preRunCode = $"let preRunCode = \"{preRunCode.Replace("\"", "\\\"")}\"";
-if (!HandleResult(interactive.Execute(preRunCode))) return;
+
+var ran = await FSharpInteractive.Create();
+if (ran.As<Error>() is { } e)
+    HandleResult(e);
+
+var interactive = ran.As<FSharpInteractive>()!;
+await interactive.Execute("1 + 1");
+var preRunCode = CodeSnippets.OpensAndOperators;
+preRunCode += $"let preRunCode = \"{preRunCode.Replace("\"", "\\\"")}\"";
+if (!HandleResult(await interactive.Execute(preRunCode))) return;
 Console.WriteLine("started. You can start working.");
 
 while (true)
@@ -31,7 +36,7 @@ while (true)
     var input = ui.ReadLine();
     if (input is null)
         continue;
-    switch (interactive.Execute(input))
+    switch (await interactive.Execute(input))
     {
         case PlainTextSuccess(var text):
             ui.WriteLine(text);
